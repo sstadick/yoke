@@ -32,22 +32,26 @@ There is an added bonus here that TypeScript and Rust work very well together vi
 ### Example Rule
 
 ```typescript
-// object types and union types combine to make the input of TrimFastqInput
+// Object types and union types combine to make the input of TrimFastqInput
 type PairedFastq = { r1: string, r2: string };
-type TrimFastqParams = { five_prime: number, three_prime: number };
+type TrimFastqParams = { five_prime?: number, three_prime?: number };
 type TrimFastqInput = TrimFastqParams & PairedFastq;
 
 class TrimFastq extends Rule<TrimFastqInput, PairedFastq> {
+    // The bash command to run
     command(input: TrimFastqInput, output: PairedFastq): string {
         return `
-    echo trim-fastq ${input.r1} --output ${output.r1};
-    echo trim-fastq ${input.r2} --output ${output.r2};
+    echo trim-fastq ${input.r1} ${input.five_prime ?? 5} ${input.three_prime ?? 3} --output ${output.r1};
+    echo trim-fastq ${input.r2} ${input.five_prime ?? 5} ${input.three_prime ?? 3} --output ${output.r2};
     `}
 
+    // Used to customize output paths / names
     createOutput(): PairedFastq {
         return { r1: this.input.r1, r2: this.input.r2 };
     }
 }
+
+await new TrimFastq({r1: "r1.fastq.gz", r2: "r2.fastq.gz"})
 ```
 
 `TrimFastq` has a generic parameter `I` which we are setting to be `TrimFastqInput` here.

@@ -49,14 +49,14 @@ abstract class Rule<I, O> {
 
 // Helper types for TrimFastq
 type PairedFastq = { r1: string, r2: string };
-type TrimFastqParams = { five_prime: number, three_prime: number };
+type TrimFastqParams = { five_prime?: number, three_prime?: number };
 type TrimFastqInput = TrimFastqParams & PairedFastq;
 
 class TrimFastq extends Rule<TrimFastqInput, PairedFastq> {
     command(input: TrimFastqInput, output: PairedFastq): string {
         return `
-    echo trim-fastq ${input.r1} --output ${output.r1};
-    echo trim-fastq ${input.r2} --output ${output.r2};
+    echo trim-fastq ${input.r1} ${input.five_prime ?? 5} ${input.three_prime ?? 3} --output ${output.r1};
+    echo trim-fastq ${input.r2} ${input.five_prime ?? 5} ${input.three_prime ?? 3} --output ${output.r2};
     `}
 
     createOutput(): PairedFastq {
@@ -132,7 +132,7 @@ async function main() {
     ];
 
     for (const input_fastq_pair of input_fastq_pairs) {
-        new TrimFastq({ ...input_fastq_pair, ...{ three_prime: 5, five_prime: 5 } }).run().then(
+        new TrimFastq({ ...input_fastq_pair }).run().then(
             (trimmed_fastqs) => new AlignFastqs({ ...trimmed_fastqs, ...{ threads: 4 }, ...ref_data }).run(),
         ).then(
             (aligned_bam) => new SplitBams(aligned_bam).run()
